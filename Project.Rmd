@@ -1,0 +1,80 @@
+---
+title: "Practical Machine Learning Project"
+author: "Nima Shirmohammadi"
+date: "September 27, 2015"
+output: html_document
+---
+
+#Preliminary works
+
+###Data Import
+
+At the beginning, the working directory is set, and the training and testing file are insreted into R studio. Because some columns in cvs files do not have any data, they should explicitly imported as NA, and removed later.
+
+```{r, eval=TRUE}
+dir<-"C:/Users/nima/Desktop/R/Machine Learning"
+setwd(dir)
+if(!dir.exists("./Project")){dir.create("./Project")}
+url.train<-"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+dest.train <- "./Project/training.csv"
+url.test<- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+dest.test  <- "./Project/testing.csv"
+download.file(url.train, dest.train,method="curl")
+download.file(url.test, dest.test,method="curl")
+training<- read.csv(file = "./Project/training.csv", na.strings = c("NA",""));
+testing <- read.csv(file = "./Project/testing.csv" , na.strings = c("NA",""));
+```
+
+###Cleaning Data
+
+Next, all the column with NA data will be deleted from the dataset
+
+```{r, eval=TRUE}
+training<- training[,colSums(is.na(training))==0]
+testing<- testing[,colSums(is.na(testing))==0]
+```
+
+In addition, because the first seven column of data do not provide valuable information with regards of class, they are removed from the data set
+
+```{r, eval=TRUE}
+training<- training[, -c(1:7)]
+testing<- testing[, -c(1:7)]
+```
+
+# Model Training
+
+We train a random forest model to the data set where classe is the predictive variables, and all other variables are being considered as potential prediction variables. In the following training, K-fold partitioning is used for cross-validation of training with k=3. The following code demonstrate the model training in R
+
+```{r, eval=TRUE}
+library(caret)
+set.seed(33833)
+model<- train(classe ~.,
+              method="rf",
+              data=training,
+              trControl= trainControl(method = "CV", number = 3) )
+```
+
+# Error prediction
+
+To estimate the out of sample error rate, we apply the predicted model to the whole training set. Comparing the predicted values for the training class with the reported class leads us to the out of sample accuracy.
+
+```{r, eval=TRUE}
+predict.train<- predict(model,training)
+Accuracy<- sum(predict.train==training$classe)/nrow(training)
+Accuracy
+```
+
+Interestingly, the trained model using the random forest was able to predict all the trained sample correctly. So, the expected error percentage would be zero
+
+# Prediction
+
+Now, we can apply the trained model to the test data, as follows
+
+```{r, eval=TRUE}
+predict.test<- predict(model, newdata = testing)
+predict.test
+````
+
+
+
+
